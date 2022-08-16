@@ -1,5 +1,5 @@
 services:
   java-assignment:
-    image: nguyenleminhquan/nodejs-assignment:latest
+    image: nguyenleminhquan/java-assignment:latest
     ports:
       - "91:5000"
