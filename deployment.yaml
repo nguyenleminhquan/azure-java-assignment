@@ -1,19 +1,19 @@
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: deploy-stage-java
+  name: deploy-java-stage
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: stage-java
+      app: java-stage
   template:
     metadata:
       labels:
-        app: stage-java
+        app: java-stage
     spec:
       containers: 
       - image: nguyenleminhquan/java-assignment:latest
-        name: stage-java
+        name: java-stage
         ports:
           - containerPort: 5000
