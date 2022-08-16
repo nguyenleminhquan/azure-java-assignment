@@ -8,6 +8,7 @@ resources:
 variables:
   containerRegistry: 'Connect to Docker Hub'
   repository: nguyenleminhquan/java-assignment
+  tag: $(Build.BuildId)
 
 # Define stages 
 stages:
@@ -28,18 +29,18 @@ stages:
             inputs:
               command: build
               repository: $(repository)
-              tags: $(Build.BuildId)
+              tags: $(tag)
             continueOnError: false
           - task: Bash@3
             displayName: Export tag
             inputs:
               targetType: inline
-              script: export TESTTAG=$(Build.BuildId)
+              script: export TESTTAG=$(tag)
           - task: Bash@3
             displayName: Create an container for testing
             inputs:
               targetType: inline
-              script: docker container run -d nguyenleminhquan/java-assignment:$(Build.BuildId)
+              script: docker container run -d $(repository):$(tag) 
           - task: Bash@3
             displayName: Health check
             inputs:
@@ -52,27 +53,27 @@ stages:
             inputs:
               command: push
               repository: $(repository)
-              tags: $(Build.BuildId)
-  # - stage: Deploy
-  #   displayName: Deploy using docker-compose
-  #   pool:
-  #     name: EP
-  #   jobs:
-  #     - job: Deploy
-  #       displayName: Deploy to EP 
-  #       steps:
-  #         - task: Bash@3
-  #           displayName: Update tag for image before building
-  #           inputs:
-  #             targetType: inline
-  #             script: |
-  #               chmod +x exportTagDev.sh
-  #               . ./exportTagDev.sh
-  #               sed -i "s/$TAG/$(Build.BuildId)/" docker-compose.yml
-  #         - task: DockerCompose@0
-  #           displayName: Deploy using docker-compose
-  #           inputs:
-  #             containerregistrytype: Container Registry
-  #             dockerRegistryEndpoint: $(containerRegistry)
-  #             dockerComposeCommand: 'up -d'
-  #             dockerComposeFile: docker-compose.yml
+              tags: $(tag)
+  - stage: Deploy
+    displayName: Deploy using docker-compose
+    pool:
+      name: EP
+    jobs:
+      - job: Deploy
+        displayName: Deploy to EP 
+        steps:
+          - task: Bash@3
+            displayName: Update tag for image before building
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x exportTagDev.sh
+                . ./exportTagDev.sh
+                sed -i "s/$TAG/$(tag)/" docker-compose.yml
+          - task: DockerCompose@0
+            displayName: Deploy using docker-compose
+            inputs:
+              containerregistrytype: Container Registry
+              dockerRegistryEndpoint: $(containerRegistry)
+              dockerComposeCommand: 'up -d'
+              dockerComposeFile: docker-compose.yml

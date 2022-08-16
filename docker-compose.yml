@@ -1,0 +1,5 @@
+services:
+  java-assignment:
+    image: nguyenleminhquan/nodejs-assignment:latest
+    ports:
+      - "91:5000"
