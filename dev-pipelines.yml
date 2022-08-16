@@ -6,8 +6,8 @@ resources:
   - repo: self 
 
 variables:
-  - containerRegistry: 'Connect to Docker Hub'
-  - repository: nguyenleminhquan/java-assignment
+  containerRegistry: 'Connect to Docker Hub'
+  repository: nguyenleminhquan/java-assignment
 
 # Define stages 
 stages:
