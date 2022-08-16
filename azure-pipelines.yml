@@ -1,19 +1,73 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- master
+  - master
 
-pool:
-  vmImage: ubuntu-latest
+resources:
+  - repo: self
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+variables:
+  containerRegistry: 'Connect to Docker Hub'
+  repository: nguyenleminhquan/java-assignment
+  tag: $(Build.BuildId)
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+stages:
+  - stage: Build_and_push
+    displayName: Build and push image to Docker Hub
+    jobs:
+      - job: Build_and_push_image
+        steps:
+          - task: Docker@2
+            displayName: Login to Docker Hub
+            inputs:
+              command: login
+              containerRegistry: $(containerRegistry)
+          - task: Docker@2
+            displayName: Build image
+            inputs:
+              command: build
+              repository: $(repository)
+              tags: $(tag)
+          - task: Bash@3
+            displayName: Export tag
+            inputs: 
+              targetType: inline
+              script: export TESTTAG=$(tag)
+          - task: Bash@3
+            displayName: Create an container for testing
+            inputs:
+              targetType: inline
+              script: docker container run -d $(repository):$(tag)
+          - task: Bash@3
+            displayName: Health check
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x healthcheck.sh
+                ./healthcheck.sh
+          - task: Docker@2
+            displayName: Push image
+            inputs:
+              command: push
+              repository: $(repository)
+              tags: $(tag)
+  - stage: Deploy_to_Kubernetes
+    displayName: Deploy to Kubernetes
+    pool:
+      name: EP
+    jobs:
+      - job: Connect_remote
+        displayName: Connect to remote server
+        steps:
+          - task: Bash@3
+            displayName: Update image tag
+            inputs:
+              targetType: inline
+              script: | 
+                chmod +x exportTagMaster.sh
+                . ./exportTagMaster.sh
+                sed -i "s/$TAG/$(tag)/" deploymentMaster.yaml
+          - task: Bash@3
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              workingDirectory: $(System.DefaultWorkingDirectory)
+              targetType: inline
+              script: kubectl apply -f deploymentMaster.yaml

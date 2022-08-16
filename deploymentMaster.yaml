@@ -1,0 +1,19 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: deploy-java-master
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: java-master
+  template:
+    metadata:
+      labels:
+        app: java-master
+    spec:
+      containers:
+        - image: nguyenleminhquan/java-assignment:176
+          name: java-master
+          ports:
+            - containerPort: 5000
