@@ -69,7 +69,7 @@ stages:
               script: |
                 chmod +x exportTagDev.sh
                 . ./exportTagDev.sh
-                sed -i "s/$TAG/$(tag)/" docker-compose.yml
+                sed -i "s/$TAG/$(tag)/" docker-compose.yaml
           - task: DockerCompose@0
             displayName: Deploy using docker-compose
             inputs:
