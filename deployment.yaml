@@ -12,7 +12,8 @@ spec:
       labels:
         app: stage-java
     spec:
-      containers:
+      containers: 
       - image: nguyenleminhquan/java-assignment:latest
+        name: stage-java
         ports:
           - containerPort: 5000
