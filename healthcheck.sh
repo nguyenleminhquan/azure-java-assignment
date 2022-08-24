@@ -1,8 +1,11 @@
 #!/bin/bash
 
-COUNT=$(docker ps | grep "java-assignment:$TESTTAG" | wc -l)
+sleep 10
+id=$(docker ps -a -q -f "name=healthcheck")
+status=$(docker container inspect --format='{{json .State.Health.Status}}' $id)
+sub="un"
 
-if [ $COUNT -eq 0 ]
+if [[ $status == *"$sub"* ]]
 then
     exit 1
 fi
