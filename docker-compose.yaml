@@ -1,0 +1,5 @@
+services:
+  java-assignment:
+    image: nguyenleminhquan/java-assignment:176
+    ports:
+      - "93:5000"

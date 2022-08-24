@@ -1,5 +1,0 @@
-services:
-  java-assignment:
-    image: nguyenleminhquan/java-assignment:latest
-    ports:
-      - "91:5000"
