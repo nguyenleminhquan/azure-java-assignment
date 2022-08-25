@@ -9,84 +9,84 @@ variables:
   - group: header-request
 
 stages:
-  # - stage: Build_Stage
-  #   displayName: Build Stage
-  #   pool:
-  #     vmImage: ubuntu-20.04
-  #   jobs:
-  #     - job: Build_image
-  #       displayName: Build image
-  #       steps:
-  #         - task: Docker@2
-  #           displayName: Login to Docker Hub
-  #           inputs:
-  #             command: login
-  #             containerRegistry: $(containerRegistry)
-  #         - task: Docker@2
-  #           displayName: Build image
-  #           inputs:
-  #             command: build
-  #             repository: $(repository)
-  #             tags:
-  #               $(tag)
-  #         - task: Bash@3
-  #           displayName: Create an container for testing
-  #           inputs:
-  #             targetType: inline
-  #             script: docker container run -d --name healthcheck -p 85:5000 $(repository):$(tag) 
-  #         - task: Bash@3
-  #           displayName: Health check
-  #           inputs:
-  #             targetType: inline
-  #             script: |
-  #               chmod +x healthcheck.sh 
-  #               . ./healthcheck.sh
-  #         - task: Docker@2
-  #           displayName: Push image
-  #           inputs:
-  #             command: push
-  #             repository: $(repository)
-  #             tags: 
-  #               $(tag)
-  #         - task: Bash@3
-  #           displayName: Retag image to staging
-  #           inputs:
-  #             targetType: inline
-  #             script: |
-  #               docker tag $(repository):$(tag) $(repository):staging
-  #         - task: Docker@2  
-  #           displayName: Push image with staging tag
-  #           inputs:
-  #             command: push
-  #             repository: $(repository)
-  #             tags: staging
-  # - stage: Deploy_Staging_QC
-  #   displayName: Deploy Staging QC
-  #   pool:
-  #     name: EP
-  #   jobs:
-  #     - job: Deploy
-  #       displayName: Deploy for QC
-  #       steps:
-  #         - task: Bash@3
-  #           displayName: Remove old container
-  #           inputs:
-  #             targetType: inline
-  #             script: |
-  #               chmod +x removeContainer.sh
-  #               . ./removeContainer.sh $(Build.SourceBranch)
-  #         - task: Bash@3
-  #           displayName: Run container  
-  #           inputs:
-  #             targetType: inline
-  #             script: docker container run --name hc -d -p 99:5000 $(repository):staging
-  #         - task: Bash@3
-  #           displayName: Health check URL
-  #           inputs:
-  #             targetType: inline
-  #             script: |
-  #               chmod +x healthcheckURL.sh
-  #               . ./healthcheckURL.sh
+  - stage: Build_Stage
+    displayName: Build Stage
+    pool:
+      vmImage: ubuntu-20.04
+    jobs:
+      - job: Build_image
+        displayName: Build image
+        steps:
+          - task: Docker@2
+            displayName: Login to Docker Hub
+            inputs:
+              command: login
+              containerRegistry: $(containerRegistry)
+          - task: Docker@2
+            displayName: Build image
+            inputs:
+              command: build
+              repository: $(repository)
+              tags:
+                $(tag)
+          - task: Bash@3
+            displayName: Create an container for testing
+            inputs:
+              targetType: inline
+              script: docker container run -d --name healthcheck -p 85:5000 $(repository):$(tag) 
+          - task: Bash@3
+            displayName: Health check
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x healthcheck.sh 
+                . ./healthcheck.sh
+          - task: Docker@2
+            displayName: Push image
+            inputs:
+              command: push
+              repository: $(repository)
+              tags: 
+                $(tag)
+          - task: Bash@3
+            displayName: Retag image to staging
+            inputs:
+              targetType: inline
+              script: |
+                docker tag $(repository):$(tag) $(repository):staging
+          - task: Docker@2  
+            displayName: Push image with staging tag
+            inputs:
+              command: push
+              repository: $(repository)
+              tags: staging
+  - stage: Deploy_Staging_QC
+    displayName: Deploy Staging QC
+    pool:
+      name: EP
+    jobs:
+      - job: Deploy
+        displayName: Deploy for QC
+        steps:
+          - task: Bash@3
+            displayName: Remove old container
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x removeContainer.sh
+                . ./removeContainer.sh $(Build.SourceBranch)
+          - task: Bash@3
+            displayName: Run container  
+            inputs:
+              targetType: inline
+              script: docker container run --name hc -d -p 99:5000 $(repository):staging
+          - task: Bash@3
+            displayName: Health check URL
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x healthcheckURL.sh
+                . ./healthcheckURL.sh
   - stage: QA
     displayName: QA
     pool:
@@ -95,54 +95,55 @@ stages:
       - job: Smoke_test
         displayName: Smoke test
         steps:
+          - script: echo "Run test"
+          # - task: Bash@3
+          #   displayName: Make HTTP POST request
+          #   env:
+          #     AUTHOR: $(authorization_1)
+          #     COOKIE: $(cookie_1)
+          #   inputs:
+          #     targetType: inline
+          #     script: |
+          #       chmod +x makePOST.sh
+          #       . ./makePOST.sh $AUTHOR $COOKIE
+          # - task: Bash@3
+          #   displayName: Run test
+          #   env:
+          #     AUTHOR: $(authorization_1)
+          #     COOKIE: $(cookie_1)
+          #   inputs:
+          #     targetType: inline
+          #     script: |
+          #       npm i axios
+          #       node stageQA.js $AUTHOR $COOKIE
+
+  - stage: Deploy_Staging
+    displayName: Deploy Staging
+    pool:
+      name: EP
+    jobs:
+      - job: Deploy
+        displayName: Deploy to Staging
+        steps:
           - task: Bash@3
-            displayName: Make HTTP POST request
-            env:
-              AUTHOR: $(authorization_1)
-              COOKIE: $(cookie_1)
+            displayName: Remove old container
             inputs:
               targetType: inline
               script: |
-                chmod +x makePOST.sh
-                . ./makePOST.sh $AUTHOR $COOKIE
+                chmod +x removeContainer.sh
+                . ./removeContainer.sh $(Build.SourceBranch)
+
           - task: Bash@3
-            displayName: Run test
-            env:
-              AUTHOR: $(authorization_1)
-              COOKIE: $(cookie_1)
+            displayName: Update image tag
             inputs:
               targetType: inline
-              script: |
-                npm i axios
-                node stageQA.js $AUTHOR $COOKIE
-
-  # - stage: Deploy_Staging
-  #   displayName: Deploy Staging
-  #   pool:
-  #     name: EP
-  #   jobs:
-  #     - job: Deploy
-  #       displayName: Deploy to Staging
-  #       steps:
-  #         - task: Bash@3
-  #           displayName: Remove old container
-  #           inputs:
-  #             targetType: inline
-  #             script: |
-  #               chmod +x removeContainer.sh
-  #               . ./removeContainer.sh $(Build.SourceBranch)
-
-  #         - task: Bash@3
-  #           displayName: Update image tag
-  #           inputs:
-  #             targetType: inline
-  #             script: | 
-  #               chmod +x exportTagStage.sh
-  #               . ./exportTagStage.sh
-  #               sed -i "s/$TAG/$(Build.BuildId)/" deployment.yaml
-  #         - task: Bash@3
-  #           displayName: Deploy to Kubernetes cluster
-  #           inputs:
-  #             workingDirectory: $(System.DefaultWorkingDirectory)
-  #             targetType: inline
-  #             script: kubectl apply -f deployment.yaml
+              script: | 
+                chmod +x exportTagStage.sh
+                . ./exportTagStage.sh
+                sed -i "s/$TAG/$(Build.BuildId)/" deployment.yaml
+          - task: Bash@3
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              workingDirectory: $(System.DefaultWorkingDirectory)
+              targetType: inline
+              script: kubectl apply -f deployment.yaml
