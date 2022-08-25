@@ -107,6 +107,9 @@ stages:
                 . ./makePOST.sh $AUTHOR $COOKIE
           - task: Bash@3
             displayName: Run test
+            env:
+              AUTHOR: $(authorization_1)
+              COOKIE: $(cookie_1)
             inputs:
               targetType: inline
               script: |
