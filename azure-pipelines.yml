@@ -10,10 +10,13 @@ variables:
   tag: $(Build.BuildId)
 
 stages:
-  - stage: Build_and_push
-    displayName: Build and push image to Docker Hub
+  - stage: Build_Production
+    displayName: Build Production
+    pool:
+      vmImage: ubuntu-20.04
     jobs:
-      - job: Build_and_push_image
+      - job: Build_image
+        displayName: Build image
         steps:
           - task: Docker@2
             displayName: Login to Docker Hub
@@ -25,38 +28,110 @@ stages:
             inputs:
               command: build
               repository: $(repository)
-              tags: $(tag)
-          - task: Bash@3
-            displayName: Export tag
-            inputs: 
-              targetType: inline
-              script: export TESTTAG=$(tag)
+              tags:
+                $(tag)
           - task: Bash@3
             displayName: Create an container for testing
             inputs:
               targetType: inline
-              script: docker container run -d $(repository):$(tag)
+              script: docker container run -d --name healthcheck -p 85:5000 $(repository):$(tag) 
           - task: Bash@3
             displayName: Health check
             inputs:
               targetType: inline
               script: |
-                chmod +x healthcheck.sh
-                ./healthcheck.sh
+                chmod +x healthcheck.sh 
+                . ./healthcheck.sh
           - task: Docker@2
             displayName: Push image
             inputs:
               command: push
               repository: $(repository)
-              tags: $(tag)
-  - stage: Deploy_to_Kubernetes
-    displayName: Deploy to Kubernetes
+              tags: 
+                $(tag)
+          - task: Bash@3
+            displayName: Retag image to stable`
+            inputs:
+              targetType: inline
+              script: |
+                docker tag $(repository):$(tag) $(repository):stable
+          - task: Docker@2  
+            displayName: Push image with stable tag
+            inputs:
+              command: push
+              repository: $(repository)
+              tags: stable
+  - stage: Deploy_Production_QC
+    displayName: Deploy Production QC
     pool:
       name: EP
     jobs:
-      - job: Connect_remote
-        displayName: Connect to remote server
+      - job: Deploy
+        displayName: Deploy for QC
         steps:
+          - task: Bash@3
+            displayName: Remove old container
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x removeContainer.sh
+                . ./removeContainer.sh $(Build.SourceBranch)
+          - task: Bash@3
+            displayName: Run container  
+            inputs:
+              targetType: inline
+              script: docker container run --name hc -d -p 99:5000 $(repository):stable
+          - task: Bash@3
+            displayName: Health check URL
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x healthcheckURL.sh
+                . ./healthcheckURL.sh
+  - stage: QA
+    displayName: QA
+    pool:
+      vmImage: ubuntu-20.04
+    jobs:
+      - job: Smoke_test
+        displayName: Smoke test
+        steps:
+          - script: echo "Run test"
+          # - task: Bash@3
+          #   displayName: Make HTTP POST request
+          #   env:
+          #     AUTHOR: $(authorization_1)
+          #     COOKIE: $(cookie_1)
+          #   inputs:
+          #     targetType: inline
+          #     script: |
+          #       chmod +x makePOST.sh
+          #       . ./makePOST.sh $AUTHOR $COOKIE
+          # - task: Bash@3
+          #   displayName: Run test
+          #   env:
+          #     AUTHOR: $(authorization_1)
+          #     COOKIE: $(cookie_1)
+          #   inputs:
+          #     targetType: inline
+          #     script: |
+          #       npm i axios
+          #       node stageQA.js $AUTHOR $COOKIE
+  - stage: Deploy_Production
+    displayName: Deploy Production
+    pool:
+      name: EP
+    jobs:
+      - job: Deploy
+        displayName: Deploy Production
+        steps:
+          - task: Bash@3
+            displayName: Remove old container
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x removeContainer.sh
+                . ./removeContainer.sh $(Build.SourceBranch)
           - task: Bash@3
             displayName: Update image tag
             inputs:
