@@ -97,27 +97,26 @@ stages:
       - job: Smoke_test
         displayName: Smoke test
         steps:
-          - script: echo "Run test"
-          # - task: Bash@3
-          #   displayName: Make HTTP POST request
-          #   env:
-          #     AUTHOR: $(authorization_1)
-          #     COOKIE: $(cookie_1)
-          #   inputs:
-          #     targetType: inline
-          #     script: |
-          #       chmod +x makePOST.sh
-          #       . ./makePOST.sh $AUTHOR $COOKIE
-          # - task: Bash@3
-          #   displayName: Run test
-          #   env:
-          #     AUTHOR: $(authorization_1)
-          #     COOKIE: $(cookie_1)
-          #   inputs:
-          #     targetType: inline
-          #     script: |
-          #       npm i axios
-          #       node stageQA.js $AUTHOR $COOKIE
+          - task: Bash@3
+            displayName: Make HTTP POST request
+            env:
+              AUTHOR: $(authorization_1)
+              COOKIE: $(cookie_1)
+            inputs:
+              targetType: inline
+              script: |
+                chmod +x makePOST.sh
+                . ./makePOST.sh $AUTHOR $COOKIE
+          - task: Bash@3
+            displayName: Run test
+            env:
+              AUTHOR: $(authorization_1)
+              COOKIE: $(cookie_1)
+            inputs:
+              targetType: inline
+              script: |
+                npm i axios
+                node stageQA.js $AUTHOR $COOKIE
   - stage: Deploy_Dev
     displayName: Deploy  Dev
     pool:
@@ -140,7 +139,7 @@ stages:
               script: |
                 chmod +x exportTagDev.sh
                 . ./exportTagDev.sh
-                sed -i "s/$TAG/$(tag)/" docker-compose.yml
+                sed -i "s/$TAG/$(tag)/" docker-compose.yaml
           - task: DockerCompose@0
             displayName: Deploy using docker-compose
             inputs:
