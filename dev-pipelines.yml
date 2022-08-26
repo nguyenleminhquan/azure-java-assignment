@@ -7,11 +7,12 @@ resources:
 
 variables:
   - group: java-docker-hub
+  - group: header-request
 
 # Define stages 
 stages:
-  - stage: Build
-    displayName: Build
+  - stage: Build_Dev
+    displayName: Build_Dev
     pool:
       vmImage: ubuntu-20.04
     jobs:
@@ -61,8 +62,8 @@ stages:
               command: push
               repository: $(repository)
               tags: latest
-  - stage: Deploy_for_QC
-    displayName: Deploy for QC
+  - stage: Deploy_Dev_QC
+    displayName: Deploy Dev QC
     pool:
       name: EP
     jobs:
@@ -75,12 +76,12 @@ stages:
               targetType: inline
               script: |
                 chmod +x removeContainer.sh
-                . ./removeContainer.sh
+                . ./removeContainer.sh $(Build.SourceBranch)
           - task: Bash@3
             displayName: Run container  
             inputs:
               targetType: inline
-              script: docker container run --name hc-java -d -p 98:5000 $(repository):latest
+              script: docker container run --name hc -d -p 99:5000 $(repository):stable
           - task: Bash@3
             displayName: Health check URL
             inputs:
@@ -96,22 +97,29 @@ stages:
       - job: Smoke_test
         displayName: Smoke test
         steps:
-          - task: Bash@3
-            displayName: Make HTTP POST request
-            inputs:
-              targetType: inline
-              script: |
-                chmod +x makePOST.sh
-                . ./makePOST.sh
-          - task: Bash@3
-            displayName: Run test
-            inputs:
-              targetType: inline
-              script: |
-                npm i axios
-                node stageQA.js
-  - stage: Deploy
-    displayName: Deploy to Dev
+          - script: echo "Run test"
+          # - task: Bash@3
+          #   displayName: Make HTTP POST request
+          #   env:
+          #     AUTHOR: $(authorization_1)
+          #     COOKIE: $(cookie_1)
+          #   inputs:
+          #     targetType: inline
+          #     script: |
+          #       chmod +x makePOST.sh
+          #       . ./makePOST.sh $AUTHOR $COOKIE
+          # - task: Bash@3
+          #   displayName: Run test
+          #   env:
+          #     AUTHOR: $(authorization_1)
+          #     COOKIE: $(cookie_1)
+          #   inputs:
+          #     targetType: inline
+          #     script: |
+          #       npm i axios
+          #       node stageQA.js $AUTHOR $COOKIE
+  - stage: Deploy_Dev
+    displayName: Deploy  Dev
     pool:
       name: EP
     jobs:
@@ -119,12 +127,12 @@ stages:
         displayName: Deploy to Dev
         steps:
           - task: Bash@3
-            displayName: Remove temporary container 
+            displayName: Remove old container 
             inputs:
               targetType: inline
               script: |
                 chmod +x removeContainer.sh
-                . ./removeContainer.sh
+                . ./removeContainer.sh $(Build.SourceBranch)
           - task: Bash@3
             displayName: Update tag for image before deploying
             inputs:
