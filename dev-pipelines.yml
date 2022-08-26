@@ -147,4 +147,4 @@ stages:
               containerregistrytype: Container Registry
               dockerRegistryEndpoint: $(containerRegistry)
               dockerComposeCommand: 'up -d'
-              dockerComposeFile: docker-compose.yml
+              dockerComposeFile: docker-compose.yaml
