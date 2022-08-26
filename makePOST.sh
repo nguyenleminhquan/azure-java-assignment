@@ -9,4 +9,4 @@ curl --location --request POST 'https://dev.azure.com/mps-hautp2/demo-azure/_api
     "templateParameters": {
         "test-run": "hello"
     }
-}
+}'
